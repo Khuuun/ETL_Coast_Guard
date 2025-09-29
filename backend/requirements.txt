@@ -1,0 +1,14 @@
+Flask==2.3.3
+Flask-SQLAlchemy
+Flask-Migrate
+psycopg2-binary      
+Flask-Login
+Flask-WTF
+Flask-Limiter
+Flask-RESTful
+celery
+redis
+bcrypt
+marshmallow
+gunicorn            
+pytest
