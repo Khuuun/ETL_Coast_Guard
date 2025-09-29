@@ -6,7 +6,7 @@
       <div class="flex flex-col p-8 gap-5">
         <div class="p-5 rounded-md shadow-xl">
           <div class="flex gap-2 items-center mb-3 text-xl font-bold">
-            <i class="bxr bx-cog"></i>
+            <i class="bxr bx-cog" />
             <p>Coast Guard Audit Data Pipeline</p>
           </div>
           <div class="grid grid-cols-5 gap-5">
@@ -14,7 +14,7 @@
               class="flex flex-col items-center w-full p-5 rounded-md gap-2 bg-blue-100 border border-blue-300 status-card"
             >
               <div class="bg-blue-500 p-4 rounded-full text-white flex items-center justify-center">
-                <i class="bxr bx-arrow-in-down-square-half"></i>
+                <i class="bxr bx-arrow-in-down-square-half" />
               </div>
               <div class="flex flex-col items-center">
                 <p class="text-blue-800 font-semibold text-xs">EXTRACT</p>
@@ -28,7 +28,7 @@
               <div
                 class="bg-yellow-500 p-4 rounded-full text-white flex items-center justify-center"
               >
-                <i class="bxr bx-check-circle"></i>
+                <i class="bxr bx-check-circle" />
               </div>
               <div class="flex flex-col items-center">
                 <p class="text-yellow-800 font-semibold text-xs">VALIDATE</p>
@@ -42,7 +42,7 @@
               <div
                 class="bg-purple-500 p-4 rounded-full text-white flex items-center justify-center"
               >
-                <i class="bxr bx-swap-vertical"></i>
+                <i class="bxr bx-swap-vertical" />
               </div>
               <div class="flex flex-col items-center">
                 <p class="text-purple-800 font-semibold text-xs">TRANSFORM</p>
@@ -56,7 +56,7 @@
               <div
                 class="bg-green-500 p-4 rounded-full text-white flex items-center justify-center"
               >
-                <i class="bxr bx-window-arrow-in"></i>
+                <i class="bxr bx-window-arrow-in" />
               </div>
               <div class="flex flex-col items-center">
                 <p class="text-green-800 font-semibold text-xs">LOAD</p>
@@ -68,7 +68,7 @@
               class="flex flex-col items-center w-full p-5 rounded-md gap-2 bg-gray-100 border border-gray-300 status-card"
             >
               <div class="bg-gray-500 p-4 rounded-full text-white flex items-center justify-center">
-                <i class="bxr bx-flag-chequered"></i>
+                <i class="bxr bx-flag-chequered" />
               </div>
               <div class="flex flex-col items-center">
                 <p class="text-gray-800 font-semibold text-xs">COMPLETE</p>
@@ -107,7 +107,7 @@
                     @change="handleFiles"
                   />
                   <div class="text-gray-500">
-                    <i class="fas fa-cloud-upload-alt text-4xl mb-4"></i>
+                    <i class="fas fa-cloud-upload-alt text-4xl mb-4" />
                     <p class="text-lg font-medium mb-2">Drag & drop files here</p>
                     <p class="text-sm">
                       or
@@ -165,13 +165,21 @@
               class="flex items-center justify-center bg-gray-400 text-white rounded-md p-1 hover:opacity-80"
               @click="uploadFiles"
             >
-              <i class="bxr bx-play"></i>
+              <i class="bxr bx-play" />
               <span>Start ETL Process</span>
+            </button>
+            <button
+              class="ml-2 flex items-center justify-center bg-green-600 text-white rounded-md p-1 hover:opacity-80"
+              :disabled="!Object.keys(transformed || {}).length"
+              @click="saveToDatabase"
+            >
+              <i class="bxr bx-database" />
+              <span>Save to DB</span>
             </button>
             <button
               class="flex items-center justify-center bg-red-400 text-white rounded-md p-1 text-lg hover:opacity-80"
             >
-              <i class="bxr bx-pause"></i>
+              <i class="bxr bx-pause" />
               <p>Stop Process</p>
             </button>
             <div>
@@ -187,50 +195,82 @@
               <span>>_ Processing Logs</span>
             </div>
             <div class="bg-black text-green-300 p-2 rounded-md h-56 overflow-auto">
-              <div class="break-words text-xs" v-if="results.length">
-                <h3 class="font-bold mb-2">Upload Results</h3>
-                <ul>
-                  <li class="mb-3" v-for="res in results" :key="res.file">
-                    <strong>{{ res.file }}</strong>
-                    <span> | Upload: {{ res.upload_status }}</span>
-                    <span>
-                      | DB Save:
-                      <span :class="res.database_save_success ? 'text-green-400' : 'text-red-400'">
-                        {{ res.database_save_success ? "Success" : "Failed" }}
+              <div class="break-words text-xs">
+                <div v-if="Object.keys(transformed).length" class="mb-3 text-sm">
+                  Transformed preview available for files:
+                  <ul class="ml-4 list-disc">
+                    <li v-for="(v, k) in transformed" :key="k">{{ k }} ({{ v.length }} records)</li>
+                  </ul>
+                </div>
+                <div v-if="Object.keys(saveResults).length" class="mb-3 text-sm">
+                  Save results:
+                  <ul class="ml-4 list-disc">
+                    <li v-for="(v, k) in saveResults" :key="k">
+                      {{ k }} - {{ v.message || v["message"] || JSON.stringify(v) }} ({{
+                        v.count || v["count"]
+                      }})
+                    </li>
+                  </ul>
+                </div>
+                <div v-if="debugUploadResponse" class="mb-2 text-xs text-gray-200">
+                  <strong>Raw upload response:</strong>
+                  <pre class="whitespace-pre-wrap">{{
+                    JSON.stringify(debugUploadResponse, null, 2)
+                  }}</pre>
+                </div>
+                <div v-if="debugSaveResponse" class="mb-2 text-xs text-gray-200">
+                  <strong>Raw save response:</strong>
+                  <pre class="whitespace-pre-wrap">{{
+                    JSON.stringify(debugSaveResponse, null, 2)
+                  }}</pre>
+                </div>
+                <div class="" v-if="results.length">
+                  <h3 class="font-bold mb-2">Upload Results</h3>
+                  <ul>
+                    <li class="mb-3" v-for="res in results" :key="res.file">
+                      <strong>{{ res.file }}</strong>
+                      <span> | Upload: {{ res.upload_status }}</span>
+                      <span>
+                        | DB Save:
+                        <span
+                          :class="res.database_save_success ? 'text-green-400' : 'text-red-400'"
+                        >
+                          {{ res.database_save_success ? "Success" : "Failed" }}
+                        </span>
                       </span>
-                    </span>
-                    <span v-if="res.records_saved"> | Records: {{ res.records_saved }}</span>
-                    <span v-if="res.database_message"> | {{ res.database_message }}</span>
-                    <div v-if="res.missing_columns?.length" class="text-yellow-300">
-                      Missing: {{ res.missing_columns.join(", ") }}
-                    </div>
-                    <div v-if="res.extra_columns?.length" class="text-blue-300">
-                      Extra: {{ res.extra_columns.join(", ") }}
-                    </div>
-                  </li>
-                </ul>
+                      <span v-if="res.records_saved"> | Records: {{ res.records_saved }}</span>
+                      <span v-if="res.database_message"> | {{ res.database_message }}</span>
+                      <div v-if="res.missing_columns?.length" class="text-yellow-300">
+                        Missing: {{ res.missing_columns.join(", ") }}
+                      </div>
+                      <div v-if="res.extra_columns?.length" class="text-blue-300">
+                        Extra: {{ res.extra_columns.join(", ") }}
+                      </div>
+                    </li>
+                  </ul>
+                </div>
               </div>
             </div>
-          </div>
-          <div class="flex flex-col gap-2 dash-box-shadow p-4 text-sm rounded-md">
-            <div>
-              <p>Statistics</p>
-            </div>
-            <div class="flex justify-between">
-              <p>Total Records:</p>
-              <span>0</span>
-            </div>
-            <div class="flex justify-between">
-              <p>Valid Records:</p>
-              <span class="text-green-700">0</span>
-            </div>
-            <div class="flex justify-between">
-              <p>Errors:</p>
-              <span class="text-red-700">0</span>
-            </div>
-            <div class="flex justify-between">
-              <p>Processing Rate:</p>
-              <span class="font-bold">0 records/sec</span>
+            <div class="flex flex-col gap-2 dash-box-shadow p-4 text-sm rounded-md">
+              <div>
+                <p>Statistics</p>
+              </div>
+              <div class="flex justify-between">
+                <p>Total Records:</p>
+                <span>0</span>
+              </div>
+              <div class="flex justify-between">
+                <p>Valid Records:</p>
+                <span class="text-green-700">0</span>
+              </div>
+              <div class="flex justify-between">
+                <p>Errors:</p>
+                <span class="text-red-700">0</span>
+              </div>
+              <div class="flex justify-between">
+                <p>Processing Rate:</p>
+                <span class="font-bold">0 records/sec</span>
+              </div>
             </div>
           </div>
         </div>
@@ -295,6 +335,10 @@ export default {
     const isSidebarOpen = ref(true); // Sidebar starts visible
     const selectedFiles = ref([]);
     const results = ref([]);
+    const transformed = ref({});
+    const saveResults = ref({});
+    const debugUploadResponse = ref(null);
+    const debugSaveResponse = ref(null);
     const isDragging = ref(false);
 
     function toggleSidebar() {
@@ -350,8 +394,49 @@ export default {
         });
         results.value = response.data.results;
         summary.value = response.data.summary;
+        // store transformed payload (not yet saved to DB)
+        transformed.value = response.data.transformed || {};
+        // debug: store full backend response for inspection
+        debugUploadResponse.value = response.data;
+        console.log("upload response", response.data);
       } catch (err) {
         console.error("Upload failed:", err);
+      } finally {
+        loading.value = false;
+      }
+    };
+
+    const saveToDatabase = async () => {
+      if (!Object.keys(transformed.value).length) return;
+      loading.value = true;
+      try {
+        const payload = {
+          files: transformed.value,
+          use_bulk: false,
+        };
+        const resp = await axios.post("http://127.0.0.1:5000/api/files/save", payload, {
+          headers: { "Content-Type": "application/json" },
+        });
+        saveResults.value = resp.data.results || {};
+        debugSaveResponse.value = resp.data;
+        console.log("save response", resp.data);
+
+        // Merge saveResults into the results log for display (safe property access)
+        results.value = results.value.map((r) => {
+          const fname = r.file;
+          const sr = saveResults.value[fname];
+          if (sr) {
+            return {
+              ...r,
+              database_save_success: !!sr.success,
+              records_saved: sr.count || 0,
+              database_message: sr.message || sr.error || "",
+            };
+          }
+          return r;
+        });
+      } catch (err) {
+        console.error("Save failed:", err);
       } finally {
         loading.value = false;
       }
@@ -375,6 +460,11 @@ export default {
       handleDrop,
       isDragging,
       uploadFiles,
+      transformed,
+      saveToDatabase,
+      saveResults,
+      debugUploadResponse,
+      debugSaveResponse,
     };
   },
   computed: {

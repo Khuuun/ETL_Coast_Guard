@@ -107,43 +107,43 @@ def transform_service(files, results, schema):
             # Convert NaN → None
             df = df.where(pd.notnull(df), None)
 
-            # Build AuditRecord objects
-            if schema == "AuditRecords":
-                df.columns = [c.strip().upper() for c in df.columns]
+            # Build plain dict records (do not create DB model instances here)
+            df.columns = [c.strip().upper() for c in df.columns]
 
+            if schema == "AuditRecords":
                 for i, row in df.iterrows():
-                    record = AuditRecord(
-                        calendar_year=row.get("CALENDAR YEAR"),
-                        as_of=row.get("AS OF"),
-                        aom_no=row.get("AOM NO."),
-                        audit_type=row.get("AUDIT TYPE"),
-                        audit_observation=row.get("AUDIT OBSERVATION"), 
-                        audit_observation_description=row.get("AUDIT OBSERVATION DESCRIPTION"),
-                        audit_recommendations=row.get("AUDIT RECOMMENDATIONS"), 
-                        agency_action_plan=row.get("AGENCY ACTION PLAN"),
-                        person_or_department_responsible=row.get("PERSON/ DEPARTMENT RESPONSIBLE"), 
-                        target_implementation_from=row.get("TARGET IMPLEMENTATION FROM"),
-                        target_implementation_to=row.get("TARGET IMPLEMENTATION TO"), 
-                        management_comment=row.get("MANAGEMENT’S COMMENT"), 
-                        auditors_rejoinder=row.get("AUDITOR’S REJOINDER"),
-                        actions_to_be_taken=row.get("ACTIONS TO BE TAKEN"), 
-                        consolidated_by=row.get("CONSOLIDATED BY"), 
-                        noted_by=row.get("NOTED BY")
-                    )
+                    record = {
+                        "calendar_year": row.get("CALENDAR YEAR"),
+                        "as_of": row.get("AS OF"),
+                        "aom_no": row.get("AOM NO."),
+                        "audit_type": row.get("AUDIT TYPE"),
+                        "audit_observation": row.get("AUDIT OBSERVATION"),
+                        "audit_observation_description": row.get("AUDIT OBSERVATION DESCRIPTION"),
+                        "audit_recommendations": row.get("AUDIT RECOMMENDATIONS"),
+                        "agency_action_plan": row.get("AGENCY ACTION PLAN"),
+                        "person_or_department_responsible": row.get("PERSON/ DEPARTMENT RESPONSIBLE"),
+                        "target_implementation_from": row.get("TARGET IMPLEMENTATION FROM"),
+                        "target_implementation_to": row.get("TARGET IMPLEMENTATION TO"),
+                        # Note: some source files use different apostrophe characters; keep as-is
+                        "management_comment": row.get("MANAGEMENT’S COMMENT") or row.get("MANAGEMENT'S COMMENT"),
+                        "auditors_rejoinder": row.get("AUDITOR’S REJOINDER") or row.get("AUDITOR'S REJOINDER"),
+                        "actions_to_be_taken": row.get("ACTIONS TO BE TAKEN"),
+                        "consolidated_by": row.get("CONSOLIDATED BY"),
+                        "noted_by": row.get("NOTED BY"),
+                    }
                     file_records.append(record)
             elif schema == "OJT_Logs":
-                df.columns = [c.strip().upper() for c in df.columns]
                 for i, row in df.iterrows():
-                    record = OJTLog(
-                        employee_id=str(row.get("EMPLOYEE ID")) if row.get("EMPLOYEE ID") is not None else None,
-                        department=row.get("DEPARTMENT"),
-                        employee_name=row.get("EMPLOYEE NAME"),
-                        time=row.get("TIME"),
-                        date=str(row.get("DATE")) if row.get("DATE") is not None else None,
-                        activity=str(row.get("ACTIVITY")) if row.get("ACTIVITY") is not None else None,
-                        image=row.get("IMAGE"),
-                        address=row.get("ADDRESS")
-                    )
+                    record = {
+                        "employee_id": str(row.get("EMPLOYEE ID")) if row.get("EMPLOYEE ID") is not None else None,
+                        "department": row.get("DEPARTMENT"),
+                        "employee_name": row.get("EMPLOYEE NAME"),
+                        "time": row.get("TIME"),
+                        "date": str(row.get("DATE")) if row.get("DATE") is not None else None,
+                        "activity": str(row.get("ACTIVITY")) if row.get("ACTIVITY") is not None else None,
+                        "image": row.get("IMAGE"),
+                        "address": row.get("ADDRESS"),
+                    }
                     file_records.append(record)
 
 
